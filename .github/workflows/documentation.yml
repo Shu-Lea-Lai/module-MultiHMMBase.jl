@@ -1,0 +1,34 @@
+name: Documentation
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - '*'
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        julia-version: [1.2.0]
+        julia-arch: [x86]
+        os: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v1.0.0
+      - uses: julia-actions/setup-julia@latest
+        with:
+          version: ${{ matrix.julia-version }}
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.6'
+      - name: Install dependencies
+        run: |
+          julia --project=docs/ -e 'using Pkg; Pkg.add(PackageSpec(path=pwd())); Pkg.instantiate()'
+          pip install matplotlib seaborn
+      - name: Build and deploy
+        env:
+          DOCUMENTER_DEBUG: true
+          # https://github.com/JuliaDocs/Documenter.jl/issues/1177
+          # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.DOCUMENTER_TOKEN }}
+        run: julia --project=docs/ docs/make.jl
